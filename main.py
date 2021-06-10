@@ -1,9 +1,30 @@
 from tkinter import *
 from tkinter import messagebox
 import random
+import json
+
+
+# ----------------------------    SEARCH BUTTON   ------------------------------- #
+
+
+def search():
+    website = website_entry.get().lower()
+
+    try:
+        with open("data.json") as data_file:
+            data = json.load(data_file)
+    except FileNotFoundError:
+        messagebox.showinfo(title="Error", message="Please enter a website first")
+    else:
+        if website in data:
+            messagebox.showinfo(title=f"{website}", message=f"Email: {data[website]['email']}\n "
+                                                            f"Password: {data[website]['password']}")
+        else:
+            messagebox.showerror(title="ERROR", message=f"There's no password associated with {website}")
 
 
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
+
 
 def password_generator():
     letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u',
@@ -31,21 +52,37 @@ def password_generator():
 # ---------------------------- SAVE PASSWORD ------------------------------- #
 
 def save():
-    website = website_entry.get()
-    email = email_entry.get()
+    website = website_entry.get().lower()
+    email = email_entry.get().lower()
     password = password_entry.get()
-    information = f"{website} / {email} / {password}\n"
+    new_data = {
+        website: {
+            "email": email,
+            "password": password
+        }
+    }
 
-    if len(website) == 0 or len(email) == 0 or len(information) == 0:
+    if len(website) == 0 or len(email) == 0 or len(password) == 0:
         messagebox.showerror(title="Error", message="You left some fields blank")
     else:
         is_ok = messagebox.askokcancel(title=website, message=f"These are the details entered: \n Email: {email}"
                                                               f"\n Password: {password}\n Is it ok to save?", )
         if is_ok:
-            with open("data.txt", "a") as data:
-                data.write(information)
-            website_entry.delete(0, 'end')
-            password_entry.delete(0, 'end')
+            try:
+                with open("data.json", "r") as data_file:
+                    data = json.load(data_file)
+                    data.update(new_data)
+
+                with open("data.json", "w") as data_file:
+                    json.dump(data, data_file, indent=4)
+
+            except FileNotFoundError:
+                with open("data.json", "w") as data_file:
+                    json.dump(new_data, data_file, indent=4)
+
+            finally:
+                website_entry.delete(0, 'end')
+                password_entry.delete(0, 'end')
 
 
 # ---------------------------- UI SETUP ------------------------------- #
@@ -86,6 +123,9 @@ password_entry.grid(column=1, row=3)
 # Buttons
 generate_password_button = Button(text="Generate Password", width=14, command=password_generator)
 generate_password_button.grid(column=2, row=3)
+
+search_button = Button(text="Search Password", width=14, command=search)
+search_button.grid(column=2, row=1)
 
 add_password_button = Button(text="Add Password", width=40, command=save)
 add_password_button.grid(column=1, row=4, columnspan=2)
